@@ -1,0 +1,33 @@
+# Configuration for Cog ⚙️
+build:
+  gpu: true
+  cuda: "11.8"
+  python_version: "3.10"
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "torch==2.0.1 --index-url https://download.pytorch.org/whl/cu118"
+    - "torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118"
+    - "torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118"
+    - "diffusers[torch]==0.11.1"
+    - "transformers==4.25.1"
+    - "einops==0.6.1"
+    - "omegaconf==2.3.0"
+    - "safetensors==0.3.1"
+    - "imageio==2.27.0"
+    - "triton"
+
+  run:
+  - pip install xformers
+  - git clone https://github.com/guoyww/AnimateDiff /AnimateDiff
+  - apt-get update && apt-get install -y git-lfs ffmpeg
+  - git lfs install
+  - git clone --branch fp16 https://huggingface.co/runwayml/stable-diffusion-v1-5 /AnimateDiff/models/StableDiffusion/stable-diffusion-v1-5
+  - wget -O /AnimateDiff/models/Motion_Module/mm_sd_v14.ckpt https://huggingface.co/guoyww/animatediff/resolve/main/mm_sd_v14.ckpt 
+  - wget -O /AnimateDiff/models/Motion_Module/mm_sd_v15.ckpt https://huggingface.co/guoyww/animatediff/resolve/main/mm_sd_v15.ckpt 
+  - wget -O /AnimateDiff/models/DreamBooth_LoRA/toonyou_beta3.safetensors https://civitai.com/api/download/models/78775
+  - wget -O /AnimateDiff/models/DreamBooth_LoRA/lyriel_v16.safetensors https://civitai.com/api/download/models/72396
+  - wget -O /AnimateDiff/models/DreamBooth_LoRA/rcnzCartoon3d_v10.safetensors https://civitai.com/api/download/models/71009
+  - wget -O /AnimateDiff/models/DreamBooth_LoRA/majicmixRealistic_v5Preview.safetensors https://civitai.com/api/download/models/79068
+  - wget -O /AnimateDiff/models/DreamBooth_LoRA/realisticVisionV40_v20Novae.safetensors https://civitai.com/api/download/models/29460
+
+predict: "predict.py:Predictor"
