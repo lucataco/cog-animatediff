@@ -32,11 +32,11 @@ class Predictor(BasePredictor):
         self.text_encoder = CLIPTextModel.from_pretrained(pretrained_model_path, subfolder="text_encoder").cuda()
         self.vae = AutoencoderKL.from_pretrained(pretrained_model_path, subfolder="vae")
         self.unet = UNet3DConditionModel.from_pretrained_2d(
-            pretrained_model_path, 
-            subfolder="unet", 
+            pretrained_model_path,
+            subfolder="unet",
             unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)
         )
-        
+
         if is_xformers_available(): self.unet.enable_xformers_memory_efficient_attention()
 
         self.pipeline = AnimationPipeline(
@@ -66,8 +66,11 @@ class Predictor(BasePredictor):
             ],
             description="Select a Module",
         ),
-        prompt: str = Input(description="Input prompt", default="masterpiece, best quality, 1girl, solo, cherry blossoms, hanami, pink flower, white flower, spring season, wisteria, petals, flower, plum blossoms, outdoors, falling petals, white hair, black eyes"),
+        prompt: str = Input(description="Input prompt", default=""),
         n_prompt: str = Input(description="Negative prompt", default=""),
+        width: int = Input(description="Width", ge=256, le=1024, default=512),
+        height: int = Input(description="Height", ge=256, le=1024, default=512),
+        video_length: int = Input(description="Video length", ge=1, le=100, default=16),
         steps: int = Input(description="Number of inference steps", ge=1, le=100, default=25),
         guidance_scale: float = Input(description="guidance scale", ge=1, le=10, default=7.5),
         seed: int = Input(description="Seed (0 = random, maximum: 2147483647)", default=0),
@@ -131,9 +134,9 @@ class Predictor(BasePredictor):
             negative_prompt     = n_prompt,
             num_inference_steps = steps,
             guidance_scale      = guidance_scale,
-            width               = 512,
-            height              = 512,
-            video_length        = 16,
+            width               = width,
+            height              = height,
+            video_length        = video_length,
         ).videos
 
         samples = torch.concat([sample])
