@@ -16,7 +16,7 @@ from transformers import CLIPTextModel, CLIPTokenizer
 from animatediff.models.unet import UNet3DConditionModel
 from animatediff.pipelines.pipeline_animation import AnimationPipeline
 from animatediff.utils.util import save_videos_grid
-from animatediff.utils.convert_from_ckpt import convert_ldm_unet_checkpoint, convert_ldm_clip_checkpoint, convert_ldm_vae_checkpoint
+from animatediff.utils.convert_from_ckpt import convert_ldm_unet_checkpoint, convert_ldm_vae_checkpoint
 from animatediff.utils.convert_lora_safetensor_to_diffusers import convert_lora
 
 from diffusers.utils.import_utils import is_xformers_available
@@ -24,25 +24,10 @@ from diffusers.utils.import_utils import is_xformers_available
 class Predictor(BasePredictor):
     def setup(self) -> None:
         """Load the model into memory to make running multiple predictions efficient"""
-        inference_config_file = "/AnimateDiff/configs/inference/inference.yaml"
-        inference_config = OmegaConf.load(inference_config_file)
-
         pretrained_model_path = "/AnimateDiff/models/StableDiffusion/stable-diffusion-v1-5"
         self.tokenizer = CLIPTokenizer.from_pretrained(pretrained_model_path, subfolder="tokenizer")
-        self.text_encoder = CLIPTextModel.from_pretrained(pretrained_model_path, subfolder="text_encoder").cuda()
+        self.text_encoder = CLIPTextModel.from_pretrained(pretrained_model_path, subfolder="text_encoder")
         self.vae = AutoencoderKL.from_pretrained(pretrained_model_path, subfolder="vae")
-        self.unet = UNet3DConditionModel.from_pretrained_2d(
-            pretrained_model_path, 
-            subfolder="unet", 
-            unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)
-        )
-        
-        if is_xformers_available(): self.unet.enable_xformers_memory_efficient_attention()
-
-        self.pipeline = AnimationPipeline(
-            vae=self.vae, text_encoder=self.text_encoder, tokenizer=self.tokenizer, unet=self.unet,
-            scheduler=DDIMScheduler(**OmegaConf.to_container(inference_config.noise_scheduler_kwargs)),
-        ).to("cuda")
 
     def predict(
         self,
@@ -51,10 +36,10 @@ class Predictor(BasePredictor):
             default="mm_sd_v14",
             choices=[
                 "mm_sd_v14",
-                "mm_sd_v15"
+                "mm_sd_v15",
+                "mm_sd_v15_v2"
             ],
         ),
-        # base: str = Input(description="Base Img", default=""),
         path: str = Input(
             default="toonyou_beta3.safetensors",
             choices=[
@@ -78,6 +63,24 @@ class Predictor(BasePredictor):
         # Create paths and load motion model
         newPath = "models/DreamBooth_LoRA/"+path
         motion_path = "/AnimateDiff/models/Motion_Module/"+motion_module+".ckpt"
+        # Support new v2 motion module
+        if motion_module.endswith("v2"):
+            inference_config_file = "/AnimateDiff/configs/inference/inference-v2.yaml"
+        else:
+            inference_config_file = "/AnimateDiff/configs/inference/inference-v1.yaml"
+        # Load configuration
+        inference_config = OmegaConf.load(inference_config_file)
+        self.unet = UNet3DConditionModel.from_pretrained_2d(
+            "/AnimateDiff/models/StableDiffusion/stable-diffusion-v1-5",
+            subfolder="unet",
+            unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)
+        )
+        self.pipeline = AnimationPipeline(
+            vae=self.vae, text_encoder=self.text_encoder, tokenizer=self.tokenizer, unet=self.unet,
+            scheduler=DDIMScheduler(**OmegaConf.to_container(inference_config.noise_scheduler_kwargs)),
+        ).to("cuda")
+        if is_xformers_available(): self.unet.enable_xformers_memory_efficient_attention()
+
         motion_module_state_dict = torch.load(motion_path, map_location="cpu")
         missing, unexpected = self.unet.load_state_dict(motion_module_state_dict, strict=False)
         assert len(unexpected) == 0
@@ -109,9 +112,7 @@ class Predictor(BasePredictor):
                 # unet
                 converted_unet_checkpoint = convert_ldm_unet_checkpoint(base_state_dict, self.unet.config)
                 self.unet.load_state_dict(converted_unet_checkpoint, strict=False)
-                # Fix so it doesnt download pytorch_model.bin every time
-                # self.text_encoder = convert_ldm_clip_checkpoint(base_state_dict)
-                # import pdb
+
                 if is_lora:
                     self.pipeline = convert_lora(self.pipeline, state_dict, alpha=lora_alpha)
 

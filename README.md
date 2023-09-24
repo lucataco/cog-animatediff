@@ -4,7 +4,7 @@ This is an implementation of [guoyww/AnimateDiff](https://github.com/guoyww/anim
 
 First, download the pre-trained weights:
 
-    cog build -t animateDiff
+    cog build -t animatediff
 
 Then, you can run predictions:
 
