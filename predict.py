@@ -55,7 +55,7 @@ class Predictor(BasePredictor):
         n_prompt: str = Input(description="Negative prompt", default=""),
         steps: int = Input(description="Number of inference steps", ge=1, le=100, default=25),
         guidance_scale: float = Input(description="guidance scale", ge=1, le=10, default=7.5),
-        seed: int = Input(description="Seed (0 = random, maximum: 2147483647)", default=0),
+        seed: int = Input(description="Seed (0 = random, maximum: 2147483647)", default=None),
     ) -> Path:
         """Run a single prediction on the model"""
         lora_alpha=0.8
@@ -118,10 +118,11 @@ class Predictor(BasePredictor):
 
         self.pipeline.to("cuda")
 
-        if seed != 0: torch.manual_seed(seed)
-        else: torch.seed()
+        if seed is None:
+            seed = int.from_bytes(os.urandom(4), "big")
+        print(f"Using seed: {seed}")
+        torch.manual_seed(seed)
 
-        print(f"current seed: {torch.initial_seed()}")
         print(f"sampling: {prompt} ...")
         outname = "output.gif"
         outpath = f"./{outname}"
