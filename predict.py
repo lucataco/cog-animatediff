@@ -90,7 +90,7 @@ class Predictor(BasePredictor):
             vae=self.vae, text_encoder=self.text_encoder, tokenizer=self.tokenizer, unet=self.unet,
             scheduler=scheduler,
             text_encoder_2 = self.text_encoder_two, tokenizer_2=self.tokenizer_two
-        ).to("cuda")
+        )
         if is_xformers_available():
             self.unet.enable_xformers_memory_efficient_attention()
         
