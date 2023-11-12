@@ -28,7 +28,7 @@ class Predictor(BasePredictor):
     def predict(
         self,
         motion_module: str = Input(
-            description="Select a Motion Model",
+            description="Select a Motion Model (currently only one available)",
             default="mm_sdxl_v10_beta",
             choices=[
                 "mm_sdxl_v10_beta"
@@ -41,7 +41,7 @@ class Predictor(BasePredictor):
                 "dreamshaper",
                 "deepblue"
             ],
-            description="Select a checkpoint",
+            description="Select a model checkpoint",
         ),
         use_checkpoint: bool = Input(default=False),
         aspect: str = Input(
@@ -52,14 +52,15 @@ class Predictor(BasePredictor):
                 "1:1",
                 "3:2",
                 "16:9",
-            ]
+            ],
+            description="Aspect ratio"
         ),
-        video_length: int = Input(description="video length", ge=16, default=16),
+        video_length: int = Input(description="Video length", ge=16, default=16),
         prompt: str = Input(description="Input prompt", default="A panda standing on a surfboard in the ocean in sunset, 4k, high resolution.Realistic, Cinematic, high resolution"),
         n_prompt: str = Input(description="Negative prompt", default=""),
         steps: int = Input(description="Number of inference steps", ge=1, le=100, default=25),
         guidance_scale: float = Input(description="guidance scale", ge=1, le=10, default=8.5),
-        seed: int = Input(description="Seed (0 = random, maximum: 2147483647)", default=None),
+        seed: int = Input(description="Seed (0 = random, maximum: 2147483647)", ge=0, le=2147483647, default=None),
     ) -> Path:
         """Run a single prediction on the model"""
         base=""
