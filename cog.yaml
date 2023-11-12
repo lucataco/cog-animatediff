@@ -2,33 +2,30 @@
 build:
   gpu: true
   cuda: "11.8"
-  python_version: "3.10"
+  python_version: "3.11"
   # a list of packages in the format <package-name>==<version>
   python_packages:
-    - "torch==2.0.1 --index-url https://download.pytorch.org/whl/cu118"
-    - "torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118"
-    - "torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118"
-    - "diffusers[torch]==0.11.1"
-    - "transformers==4.25.1"
-    - "einops==0.6.1"
+    - "torch==2.1.0 --index-url https://download.pytorch.org/whl/cu118"
+    - "torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cu118"
+    - "torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118"
+    - "diffusers[torch]==0.20.2"
+    - "transformers==4.30.0"
+    - "einops==0.7.0rc1"
     - "omegaconf==2.3.0"
     - "safetensors==0.3.1"
     - "imageio==2.27.0"
+    - "imageio[ffmpeg]"
     - "triton"
 
   run:
-  - pip install xformers
-  - git clone https://github.com/guoyww/AnimateDiff /AnimateDiff
+  - pip install xformers==0.0.22.post4
+  - git clone --branch sdxl https://github.com/guoyww/AnimateDiff /AnimateDiff
   - apt-get update && apt-get install -y git-lfs ffmpeg
   - git lfs install
-  - git clone --branch fp16 https://huggingface.co/runwayml/stable-diffusion-v1-5 /AnimateDiff/models/StableDiffusion/stable-diffusion-v1-5
-  - wget -O /AnimateDiff/models/Motion_Module/mm_sd_v14.ckpt https://huggingface.co/guoyww/animatediff/resolve/main/mm_sd_v14.ckpt 
-  - wget -O /AnimateDiff/models/Motion_Module/mm_sd_v15.ckpt https://huggingface.co/guoyww/animatediff/resolve/main/mm_sd_v15.ckpt 
-  - wget -O /AnimateDiff/models/Motion_Module/mm_sd_v15_v2.ckpt https://huggingface.co/guoyww/animatediff/resolve/main/mm_sd_v15_v2.ckpt
-  - wget -O /AnimateDiff/models/DreamBooth_LoRA/toonyou_beta3.safetensors https://civitai.com/api/download/models/78775
-  - wget -O /AnimateDiff/models/DreamBooth_LoRA/lyriel_v16.safetensors https://civitai.com/api/download/models/72396
-  - wget -O /AnimateDiff/models/DreamBooth_LoRA/rcnzCartoon3d_v10.safetensors https://civitai.com/api/download/models/71009
-  - wget -O /AnimateDiff/models/DreamBooth_LoRA/majicmixRealistic_v5Preview.safetensors https://civitai.com/api/download/models/79068
-  - wget -O /AnimateDiff/models/DreamBooth_LoRA/realisticVisionV40_v20Novae.safetensors https://civitai.com/api/download/models/29460
-
+  - rm -r /AnimateDiff/models/StableDiffusion
+  - git clone https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0 /AnimateDiff/models/StableDiffusion/
+  - wget -O /AnimateDiff/models/Motion_Module/mm_sdxl_v10_beta.ckpt https://huggingface.co/guoyww/animatediff/resolve/main/mm_sdxl_v10_beta.ckpt
+  - wget -O /AnimateDiff/models/DreamBooth_LoRA/dynavision.safetensors https://civitai.com/api/download/models/169718
+  - wget -O /AnimateDiff/models/DreamBooth_LoRA/dreamshaper.safetensors https://civitai.com/api/download/models/126688
+  - wget -O /AnimateDiff/models/DreamBooth_LoRA/deepblue.safetensors https://civitai.com/api/download/models/189102
 predict: "predict.py:Predictor"
