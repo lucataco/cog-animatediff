@@ -14,6 +14,9 @@ from animatediff.models.unet import UNet3DConditionModel
 from animatediff.pipelines.pipeline_animation import AnimationPipeline
 from animatediff.utils.util import save_videos_grid, load_weights
 from diffusers.utils.import_utils import is_xformers_available
+import torchvision.transforms as transforms
+
+from einops import rearrange
 
 class Predictor(BasePredictor):
     def setup(self) -> None:
@@ -24,6 +27,20 @@ class Predictor(BasePredictor):
         self.vae = AutoencoderKL.from_pretrained(pretrained_model_path, subfolder="vae")
         self.tokenizer_two = CLIPTokenizer.from_pretrained(pretrained_model_path, subfolder="tokenizer_2")
         self.text_encoder_two = CLIPTextModelWithProjection.from_pretrained(pretrained_model_path, subfolder="text_encoder_2")
+
+    def to_pil_images(self, video_frames: torch.Tensor, output_type='pil'):
+        to_pil = transforms.ToPILImage()
+        video_frames = rearrange(video_frames, "b c f w h -> b f c w h")
+        bsz = video_frames.shape[0]
+        images = []
+        for i in range(bsz):
+            video = video_frames[i]
+            for j in range(video.shape[0]):
+                if output_type == "pil":
+                    images.append(to_pil(video[j]))
+                else:
+                    images.append(video[j])
+        return images
 
     def predict(
         self,
@@ -56,11 +73,12 @@ class Predictor(BasePredictor):
             description="Aspect ratio"
         ),
         video_length: int = Input(description="Video length", ge=16, default=16),
-        prompt: str = Input(description="Input prompt", default="A panda standing on a surfboard in the ocean in sunset, 4k, high resolution.Realistic, Cinematic, high resolution"),
+        prompt: str = Input(description="Input prompt", default="A panda standing on a surfboard in the ocean in sunset, 4k, high resolution. Realistic, Cinematic, high resolution"),
         n_prompt: str = Input(description="Negative prompt", default=""),
         steps: int = Input(description="Number of inference steps", ge=1, le=100, default=25),
         guidance_scale: float = Input(description="guidance scale", ge=1, le=10, default=8.5),
         seed: int = Input(description="Seed (0 = random, maximum: 2147483647)", ge=0, le=2147483647, default=None),
+        mp4: bool = Input(description="Returns .mp4 if true or .gif if false", default=True)
     ) -> Path:
         """Run a single prediction on the model"""
         base=""
@@ -125,9 +143,6 @@ class Predictor(BasePredictor):
         torch.manual_seed(seed)
 
         print(f"sampling: {prompt} ...")
-        outname = "output.gif"
-        outpath = f"./{outname}"
-        out_path = Path(tempfile.mkdtemp()) / "out.mp4"
 
         sample = self.pipeline(
             prompt,
@@ -140,8 +155,15 @@ class Predictor(BasePredictor):
         ).videos
 
         samples = torch.concat([sample])
-        save_videos_grid(samples, outpath , n_rows=1)
-        os.system("ffmpeg -i output.gif -movflags faststart -pix_fmt yuv420p -qp 17 "+ str(out_path))
-        # Fix so that it returns the actual gif or mp4 in replicate
-        print(f"saved to file")
-        return Path(out_path)
+
+        if not mp4:
+            out_path = Path(tempfile.mkdtemp()) / "out.gif"
+            save_videos_grid(samples, str(out_path) , n_rows=1)
+        else:
+            images = self.to_pil_images(sample, output_type="pil")
+            out_dir = Path(tempfile.mkdtemp())
+            out_path = out_dir / "out.mp4"
+            for i, image in enumerate(images):
+                image.save(str(out_dir / f"{i:03}.png"))
+            os.system(f"ffmpeg -pattern_type glob -i '{str(out_dir)}/*.png' -movflags faststart -pix_fmt yuv420p -qp 17 "+ str(out_path))
+        return out_path
