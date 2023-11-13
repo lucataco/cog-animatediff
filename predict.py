@@ -56,7 +56,7 @@ class Predictor(BasePredictor):
         steps: int = Input(description="Number of inference steps", ge=1, le=100, default=25),
         guidance_scale: float = Input(description="guidance scale", ge=1, le=10, default=7.5),
         seed: int = Input(description="Seed (0 = random, maximum: 2147483647)", default=None),
-        mp4: bool = Input(description="Produce .mp4 if true, or .gif if false")
+        mp4: bool = Input(description="Produce .mp4 if true, or .gif if false", default=True)
     ) -> Path:
         """Run a single prediction on the model"""
         lora_alpha=0.8
