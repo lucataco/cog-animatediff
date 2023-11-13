@@ -56,6 +56,7 @@ class Predictor(BasePredictor):
         steps: int = Input(description="Number of inference steps", ge=1, le=100, default=25),
         guidance_scale: float = Input(description="guidance scale", ge=1, le=10, default=7.5),
         seed: int = Input(description="Seed (0 = random, maximum: 2147483647)", default=None),
+        mp4: bool = Input(description="Produce .mp4 if true, or .gif if false")
     ) -> Path:
         """Run a single prediction on the model"""
         lora_alpha=0.8
@@ -139,8 +140,15 @@ class Predictor(BasePredictor):
         ).videos
 
         samples = torch.concat([sample])
-        save_videos_grid(samples, outpath , n_rows=1)
-        os.system("ffmpeg -i output.gif -movflags faststart -pix_fmt yuv420p -qp 17 "+ str(out_path))
-        # Fix so that it returns the actual gif or mp4 in replicate
-        print(f"saved to file")
+
+        if not mp4:
+            out_path = Path(tempfile.mkdtemp()) / "out.gif"
+            save_videos_grid(samples, str(out_path) , n_rows=1)
+        else:
+            images = self.to_pil_images(sample, output_type="pil")
+            out_dir = Path(tempfile.mkdtemp())
+            out_path = out_dir / "out.mp4"
+            for i, image in enumerate(images):
+                image.save(str(out_dir / f"{i:03}.png"))
+            os.system(f"ffmpeg -pattern_type glob -i '{str(out_dir)}/*.png' -movflags faststart -pix_fmt yuv420p -qp 17 "+ str(out_path))
         return Path(out_path)
