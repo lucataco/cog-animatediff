@@ -1,5 +1,8 @@
 # guoyww/AnimateDiff Cog model
 
+[![Try a demo on Replicate](https://replicate.com/lucataco/animate-diff/badge)](https://replicate.com/lucataco/animate-diff)
+https://github.com/KIMGEONUNG/BigColor 
+
 This is an implementation of [guoyww/AnimateDiff](https://github.com/guoyww/animatediff/) as a Cog model. [Cog packages machine learning models as standard containers.](https://github.com/replicate/cog)
 
 First, download the pre-trained weights:
