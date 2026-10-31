@@ -18,3 +18,9 @@ Then, you can run predictions:
 Example output for prompt: "masterpiece, best quality, 1girl, solo, cherry blossoms, hanami, pink flower, white flower, spring season, wisteria, petals, flower, outdoors, falling petals, white hair, brown eyes"
 
 ![alt text](output.gif)
+
+## License
+
+The code in this repository is licensed under the [Apache License 2.0](LICENSE).
+
+The model weights are not covered by this license. The [AnimateDiff motion modules](https://huggingface.co/guoyww/animatediff) are Apache 2.0, the Stable Diffusion 1.5 base model is under CreativeML Open RAIL-M, and each bundled Civitai checkpoint follows its own Civitai license.
